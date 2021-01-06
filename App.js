@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Platform,
   Text,
@@ -9,13 +9,42 @@ import {
   Button,
   TouchableOpacity,
   ActivityIndicator,
-} from "react-native";
-import Constants from "expo-constants";
-import * as Location from "expo-location";
-import { BlurView } from "expo-blur";
-import AppLoading from "expo-app-loading";
-import { useFonts, Comfortaa_600SemiBold } from "@expo-google-fonts/comfortaa";
-import TypeWriter from "react-native-typewriter";
+  Linking,
+} from 'react-native';
+import { useAssets } from 'expo-asset';
+import Constants from 'expo-constants';
+import * as Location from 'expo-location';
+import { BlurView } from 'expo-blur';
+import AppLoading from 'expo-app-loading';
+import { useFonts, Comfortaa_600SemiBold } from '@expo-google-fonts/comfortaa';
+import TypeWriter from 'react-native-typewriter';
+import FlipCard from 'react-native-flip-card';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Feather } from '@expo/vector-icons';
+
+const cityIds = {
+  'Thành Phố Hà Nội': 218,
+  'Ho Chi Minh City': 217,
+  'Thành Phố Đà Nẵng': 219,
+  'Thành Phố Cần Thơ': 221,
+  'Thành Phố Hải Phòng': 220,
+  'Tỉnh Thừa Thiên Huế': 273,
+  'Tỉnh Khánh Hòa': 248,
+  'Tỉnh Đồng Nai': 222,
+  'Tỉnh Nghệ An': 257,
+  'Tỉnh Bà Rịa-Vũng Tàu': 223,
+  'Tỉnh Bắc Ninh': 228,
+  'Tỉnh Bình Dương': 230,
+  'Tỉnh Lâm Đồng': 254,
+  'Tỉnh Quảng Nam': 263,
+  'Tỉnh Quảng Ninh': 265,
+  'Tỉnh Thái Nguyên': 271,
+};
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export default function App() {
   let [fontsLoaded] = useFonts({
@@ -23,21 +52,44 @@ export default function App() {
   });
 
   const [errorMsg, setErrorMsg] = useState(null);
+  const [city, setCity] = useState();
+  const [fetching, setFetching] = useState(true);
+  const [flip, setFlip] = useState(false);
+  const [link, setLink] = useState('');
   const [location, setLocation] = useState();
-  const [fetching, setFetching] = useState(false);
+  const [retry, setRetry] = useState(false);
+
+  const [firstText, setFirstText] = useState('Đang định vị...');
+  const [assets] = useAssets([require('./assets/background.png')]);
 
   useEffect(() => {
     (async () => {
-      if (Platform.OS === "android" && !Constants.isDevice) {
+      if (Platform.OS === 'android' && !Constants.isDevice) {
         setErrorMsg(
-          "Oops, this will not work on Snack in an Android emulator. Try it on your device!"
+          'Oops, this will not work on Snack in an Android emulator. Try it on your device!'
         );
         return;
       }
-      let { status } = await Location.requestPermissionsAsync();
-      if (status !== "granted") {
-        setErrorMsg("Permission to access location was denied");
-        return;
+      const region = await AsyncStorage.getItem('region');
+      if (region !== null) {
+        setCity(region);
+        setFetching(true);
+        let location = await Location.getCurrentPositionAsync({});
+        setFirstText('Gacha?');
+        setLocation(location.coords);
+        setFetching(false);
+        Location.reverseGeocodeAsync(location.coords).then((data) => {
+          if (data[0].region !== region) {
+            setCity(data[0].region);
+          }
+        });
+      } else {
+        let { status } = await Location.requestPermissionsAsync();
+        if (status !== 'granted') {
+          setErrorMsg('Permission to access location was denied');
+          return;
+        }
+        await getCurrentLocation();
       }
     })();
   }, []);
@@ -48,86 +100,213 @@ export default function App() {
     setFetching(true);
     let location = await Location.getCurrentPositionAsync({});
     let reverseGeo = await Location.reverseGeocodeAsync(location.coords);
-    setLocation(reverseGeo[0].city);
+    await AsyncStorage.setItem('region', reverseGeo[0].region);
+    setCity(reverseGeo[0].region);
+    setLocation(location.coords);
+    setFirstText('Gacha?');
     setFetching(false);
+  };
+
+  let listRestaurants = [];
+
+  const headers = {
+    'x-foody-api-version': '1',
+    'x-foody-app-type': '1004',
+    'x-foody-client-id': '',
+    'x-foody-client-language': 'vi',
+    'x-foody-client-type': '1',
+    'x-foody-client-version': '3.0.0',
+  };
+
+  const getListRestaurants = async () => {
+    setFetching(true);
+    const payload = {
+      category_group: 1,
+      city_id: cityIds[city],
+      delivery_only: true,
+      keyword: '',
+      sort_type: 3,
+      position: {
+        latitude: location ? location.latitude : 21.017998,
+        longitude: location ? location.longitude : 105.838806,
+      },
+      foody_services: [1],
+      full_restaurant_ids: true,
+      combine_categories: [{ code: 1, id: 1000000 }],
+    };
+
+    const result = await axios.post(
+      'https://gappapi.deliverynow.vn/api/delivery/search_global',
+      payload,
+      { headers }
+    );
+    return result?.data?.reply?.search_result[0].restaurant_ids;
+  };
+
+  const getARandomRestaurant = async () => {
+    listRestaurants = await getListRestaurants();
+    let results;
+    if (listRestaurants.length >= 0) {
+      results = await getRestaurantInfoFromIds(listRestaurants);
+      if (results.length === 0) {
+        setFirstText('Không còn quán nào mở :(');
+      } else {
+        const chosenOne =
+          results[Math.round(Math.random() * (results.length - 1))];
+        startGacha(results, chosenOne);
+      }
+    }
+  };
+
+  const startGacha = async (listRestaurant, chosenOne) => {
+    const startTime = new Date();
+    const duration = 7; // How long you want the gacha to run
+    let i = 0;
+    while (true) {
+      setFirstText(listRestaurant[i].name.trim());
+      i++;
+      if (i >= listRestaurant.length) {
+        i = 0;
+      }
+      await sleep(100);
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      if (elapsed >= duration) {
+        break;
+      }
+    }
+    setFirstText(chosenOne.name.trim());
+    setLink(chosenOne.url);
+    setRetry(true);
+    setFetching(false);
+  };
+
+  const getRestaurantInfoFromIds = async (ids) => {
+    const payload = { restaurant_ids: ids };
+    let result = await axios.post(
+      'https://gappapi.deliverynow.vn/api/delivery/get_infos',
+      payload,
+      { headers }
+    );
+    result = result.data.reply.delivery_infos.filter((d) => d.is_open);
+    return result;
   };
 
   if (errorMsg) {
     text = errorMsg;
-  } else if (location) {
-    text = location;
+  } else if (city) {
+    text = city;
   }
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || !assets) {
     return <AppLoading />;
   } else {
     return (
       <View style={styles.container}>
         <Image
-          source={require("./assets/background.png")}
-          resizeMode="contain"
+          source={require('./assets/background.png')}
+          resizeMode='contain'
           style={{
-            height: Dimensions.get("screen").height,
-            position: "absolute",
+            height: Dimensions.get('screen').height,
+            position: 'absolute',
           }}
         />
-        <View
-          style={{
-            shadowColor: "black",
-            shadowOffset: {
-              width: 0,
-              height: 10,
-            },
-            shadowOpacity: 0.05,
-            shadowRadius: 20,
-          }}
-        >
-          <BlurView
-            tint="light"
-            intensity={100}
-            style={{
-              height: 400,
-              width: 300,
-              borderRadius: 30,
-              overflow: "hidden",
-            }}
+        <View style={styles.settings}>
+          <TouchableOpacity onPress={() => setFlip(!flip)}>
+            <Feather name='settings' size={24} color='white' />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.card}>
+          <FlipCard
+            flip={flip}
+            flipHorizontal={true}
+            perspective={1000}
+            flipVertical={false}
+            style={{ top: '25%' }}
+            friction={10}
+            clickable={false}
           >
-            <View
-              style={{ flex: 1, alignSelf: "center", justifyContent: "center" }}
+            <BlurView
+              tint='light'
+              intensity={100}
+              style={{
+                height: 400,
+                width: 300,
+                borderRadius: 30,
+                overflow: 'hidden',
+                padding: 10,
+              }}
             >
-              <TouchableOpacity
-                onPress={() => getCurrentLocation()}
-                disabled={fetching}
+              <View
+                style={{
+                  flex: 1,
+                  alignSelf: 'center',
+                  justifyContent: 'center',
+                  minWidth: '100%',
+                  alignItems: 'center',
+                }}
               >
-                <Text
-                  style={{
-                    fontFamily: "Comfortaa_600SemiBold",
-                    fontSize: 36,
-                    color: "#583d72",
-                  }}
+                <TouchableOpacity
+                  onPress={() => getARandomRestaurant()}
+                  disabled={fetching}
                 >
-                  Gacha
-                </Text>
-              </TouchableOpacity>
-              <ActivityIndicator animating={fetching} />
-              <View style={{ position: "absolute", bottom: 50, left: -60 }}>
-                {text && (
-                  <TypeWriter
+                  <Text
                     style={{
-                      fontFamily: "Comfortaa_600SemiBold",
-                      fontSize: 18,
-                      color: "#583d72",
+                      fontFamily: 'Comfortaa_600SemiBold',
+                      fontSize: 24,
+                      color: '#583d72',
                     }}
-                    typing={1}
-                    minDelay={30}
-                    initialDelay={2000}
                   >
-                    {`Location: ${text}`}
-                  </TypeWriter>
-                )}
+                    {firstText}
+                  </Text>
+                </TouchableOpacity>
+                <ActivityIndicator
+                  animating={fetching}
+                  style={{ marginTop: 10 }}
+                />
+                {link || retry ? (
+                  <View>
+                    <TouchableOpacity
+                      onPress={() => Linking.openURL(link)}
+                      style={styles.shadowButton}
+                    >
+                      <Feather name='external-link' size={24} color='white' />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        getARandomRestaurant();
+                        setRetry(false);
+                        setLink(null);
+                      }}
+                      style={styles.shadowButton}
+                    >
+                      <Feather name='refresh-ccw' size={24} color='white' />
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
+                <View style={{ position: 'absolute', bottom: 50 }}>
+                  {text && (
+                    <TypeWriter
+                      style={{
+                        fontFamily: 'Comfortaa_600SemiBold',
+                        fontSize: 18,
+                        color: '#583d72',
+                      }}
+                      typing={1}
+                      minDelay={30}
+                      initialDelay={2000}
+                    >
+                      {`Location: ${text}`}
+                    </TypeWriter>
+                  )}
+                </View>
               </View>
-            </View>
-          </BlurView>
+            </BlurView>
+            <BlurView tint='light' intensity={100} style={styles.blurView}>
+              <View style={styles.container}>
+                <Text>Creator: Longmaba</Text>
+              </View>
+            </BlurView>
+          </FlipCard>
         </View>
       </View>
     );
@@ -137,12 +316,44 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 20,
   },
   paragraph: {
     fontSize: 18,
-    textAlign: "center",
+    textAlign: 'center',
+  },
+  blurView: {
+    height: 400,
+    width: 300,
+    borderRadius: 30,
+    overflow: 'hidden',
+  },
+  card: {
+    shadowColor: 'black',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+  },
+  settings: { position: 'absolute', top: 40, right: 20 },
+  shadowButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: 'transparent',
+    borderRadius: 10,
+    shadowColor: 'black',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 5,
   },
 });
