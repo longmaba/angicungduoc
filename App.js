@@ -11,6 +11,10 @@ import {
   ActivityIndicator,
   Linking,
 } from 'react-native';
+
+import { AdMobBanner, AdMobInterstitial } from 'expo-ads-admob';
+import * as StoreReview from 'expo-store-review';
+
 import { useAssets } from 'expo-asset';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
@@ -22,6 +26,39 @@ import FlipCard from 'react-native-flip-card';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
+
+import { LinearGradient } from 'expo-linear-gradient';
+
+const bannerAdId = 'ca-app-pub-1608026392919290/7161404605';
+const interstialAdId = 'ca-app-pub-1608026392919290~2100649614';
+
+const showAds = false;
+
+const storeUrl = StoreReview.storeUrl();
+
+const initAd = async () => {
+  await AdMobInterstitial.setAdUnitID(interstialAdId);
+  let rdy = await AdMobInterstitial.getIsReadyAsync();
+  if (!rdy) {
+    AdMobInterstitial.requestAdAsync({ servePersonalizedAds: true });
+  }
+};
+
+const serveAds = async () => {
+  let rdy = await AdMobInterstitial.getIsReadyAsync();
+  if (!rdy) {
+    try {
+      AdMobInterstitial.requestAdAsync({ servePersonalizedAds: true });
+      return;
+    } catch (e) {
+      console.log(e);
+      return;
+    }
+  }
+  if (showAds) {
+    await AdMobInterstitial.showAdAsync();
+  }
+};
 
 const cityIds = {
   'Thành Phố Hà Nội': 218,
@@ -65,11 +102,10 @@ export default function App() {
   useEffect(() => {
     (async () => {
       if (Platform.OS === 'android' && !Constants.isDevice) {
-        setErrorMsg(
-          'Oops, this will not work on Snack in an Android emulator. Try it on your device!'
-        );
+        setErrorMsg('Oops, this will not work on Snack in an Android emulator. Try it on your device!');
         return;
       }
+      initAd();
       const region = await AsyncStorage.getItem('region');
       if (region !== null) {
         setCity(region);
@@ -135,11 +171,7 @@ export default function App() {
       combine_categories: [{ code: 1, id: 1000000 }],
     };
 
-    const result = await axios.post(
-      'https://gappapi.deliverynow.vn/api/delivery/search_global',
-      payload,
-      { headers }
-    );
+    const result = await axios.post('https://gappapi.deliverynow.vn/api/delivery/search_global', payload, { headers });
     return result?.data?.reply?.search_result[0].restaurant_ids;
   };
 
@@ -151,8 +183,7 @@ export default function App() {
       if (results.length === 0) {
         setFirstText('Không còn quán nào mở :(');
       } else {
-        const chosenOne =
-          results[Math.round(Math.random() * (results.length - 1))];
+        const chosenOne = results[Math.round(Math.random() * (results.length - 1))];
         startGacha(results, chosenOne);
       }
     }
@@ -171,6 +202,7 @@ export default function App() {
       await sleep(100);
       const elapsed = Math.round((Date.now() - startTime) / 1000);
       if (elapsed >= duration) {
+        serveAds();
         break;
       }
     }
@@ -182,11 +214,7 @@ export default function App() {
 
   const getRestaurantInfoFromIds = async (ids) => {
     const payload = { restaurant_ids: ids };
-    let result = await axios.post(
-      'https://gappapi.deliverynow.vn/api/delivery/get_infos',
-      payload,
-      { headers }
-    );
+    let result = await axios.post('https://gappapi.deliverynow.vn/api/delivery/get_infos', payload, { headers });
     result = result.data.reply.delivery_infos.filter((d) => d.is_open);
     return result;
   };
@@ -204,7 +232,7 @@ export default function App() {
       <View style={styles.container}>
         <Image
           source={require('./assets/background.png')}
-          resizeMode='contain'
+          resizeMode="contain"
           style={{
             height: Dimensions.get('screen').height,
             position: 'absolute',
@@ -212,7 +240,7 @@ export default function App() {
         />
         <View style={styles.settings}>
           <TouchableOpacity onPress={() => setFlip(!flip)}>
-            <Feather name='settings' size={24} color='white' />
+            <Feather name="settings" size={24} color="white" />
           </TouchableOpacity>
         </View>
         <View style={styles.card}>
@@ -226,7 +254,7 @@ export default function App() {
             clickable={false}
           >
             <BlurView
-              tint='light'
+              tint="light"
               intensity={100}
               style={{
                 height: 400,
@@ -245,31 +273,23 @@ export default function App() {
                   alignItems: 'center',
                 }}
               >
-                <TouchableOpacity
-                  onPress={() => getARandomRestaurant()}
-                  disabled={fetching}
-                >
+                <TouchableOpacity onPress={() => getARandomRestaurant()} disabled={fetching}>
                   <Text
                     style={{
                       fontFamily: 'Comfortaa_600SemiBold',
                       fontSize: 24,
                       color: '#583d72',
+                      textAlign: 'center',
                     }}
                   >
                     {firstText}
                   </Text>
                 </TouchableOpacity>
-                <ActivityIndicator
-                  animating={fetching}
-                  style={{ marginTop: 10 }}
-                />
+                <ActivityIndicator animating={fetching} style={{ marginTop: 10 }} />
                 {link || retry ? (
-                  <View>
-                    <TouchableOpacity
-                      onPress={() => Linking.openURL(link)}
-                      style={styles.shadowButton}
-                    >
-                      <Feather name='external-link' size={24} color='white' />
+                  <View style={{ flexDirection: 'row' }}>
+                    <TouchableOpacity onPress={() => Linking.openURL(link)} style={styles.shadowButton}>
+                      <Feather name="external-link" size={24} color="white" />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => {
@@ -279,7 +299,7 @@ export default function App() {
                       }}
                       style={styles.shadowButton}
                     >
-                      <Feather name='refresh-ccw' size={24} color='white' />
+                      <Feather name="refresh-ccw" size={24} color="white" />
                     </TouchableOpacity>
                   </View>
                 ) : null}
@@ -301,13 +321,61 @@ export default function App() {
                 </View>
               </View>
             </BlurView>
-            <BlurView tint='light' intensity={100} style={styles.blurView}>
+            <BlurView tint="light" intensity={100} style={styles.blurView}>
               <View style={styles.container}>
-                <Text>Creator: Longmaba</Text>
+                <Text
+                  style={{
+                    fontFamily: 'Comfortaa_600SemiBold',
+                    fontSize: 12,
+                    color: '#c2c2c2',
+                  }}
+                >
+                  v1.0.0
+                </Text>
+                <View style={styles.shadowButtonLarge}>
+                  <Text
+                    style={{
+                      fontFamily: 'Comfortaa_600SemiBold',
+                      fontSize: 18,
+                      color: '#c2c2c2',
+                    }}
+                  >
+                    Creator: HLG
+                  </Text>
+                </View>
+                <View style={styles.shadowButtonLarge}>
+                  <TouchableOpacity
+                    onPress={() => Linking.openURL(storeUrl ? storeUrl : 'https://www.facebook.com/longmaba')}
+                  >
+                    <LinearGradient
+                      style={styles.shadowButtonLarge}
+                      colors={['#fd746c', '#ff9068']}
+                      start={{ x: 0, y: 0.5 }}
+                      end={{ x: 1, y: 0.5 }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: 'Comfortaa_600SemiBold',
+                          fontSize: 18,
+                          color: 'white',
+                        }}
+                      >
+                        {`Rate me? <3`}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
               </View>
             </BlurView>
           </FlipCard>
         </View>
+        <AdMobBanner
+          bannerSize="banner"
+          adUnitID={bannerAdId} // Test ID, Replace with your-admob-unit-id
+          servePersonalizedAds // true or false
+          onDidFailToReceiveAdWithError={(e) => console.log(e)}
+          style={{ position: 'absolute', bottom: 0 }}
+        />
       </View>
     );
   }
@@ -355,5 +423,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     margin: 5,
+  },
+  shadowButtonLarge: {
+    backgroundColor: '#f2f2f2',
+    width: 200,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: 'black',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowRadius: 5,
+    shadowOpacity: 0.07,
+    margin: 10,
   },
 });

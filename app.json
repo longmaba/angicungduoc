@@ -1,29 +1,37 @@
 {
   "expo": {
-    "name": "angicungduoc",
+    "name": "Ăn gì bây giờ?",
     "slug": "angicungduoc",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/background.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-1608026392919290~2100649614"
+      },
+      "bundleIdentifier": "com.hlg.angicungduoc",
+      "buildNumber": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-1608026392919290~3416249644"
+      },
+      "package": "com.hlg.angicungduoc",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
