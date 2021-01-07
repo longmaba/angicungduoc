@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Image,
   Dimensions,
-  Button,
   TouchableOpacity,
   ActivityIndicator,
   Linking,
@@ -20,7 +19,7 @@ import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import { BlurView } from 'expo-blur';
 import AppLoading from 'expo-app-loading';
-import { useFonts, Comfortaa_600SemiBold } from '@expo-google-fonts/comfortaa';
+import { useFonts, Comfortaa_600SemiBold, Comfortaa_700Bold } from '@expo-google-fonts/comfortaa';
 import TypeWriter from 'react-native-typewriter';
 import FlipCard from 'react-native-flip-card';
 import axios from 'axios';
@@ -30,7 +29,7 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const bannerAdId = 'ca-app-pub-1608026392919290/7161404605';
-const interstialAdId = 'ca-app-pub-1608026392919290~2100649614';
+const interstialAdId = 'ca-app-pub-3940256099942544/1033173712';
 
 const showAds = false;
 
@@ -86,6 +85,7 @@ function sleep(ms) {
 export default function App() {
   let [fontsLoaded] = useFonts({
     Comfortaa_600SemiBold,
+    Comfortaa_700Bold,
   });
 
   const [errorMsg, setErrorMsg] = useState(null);
@@ -95,6 +95,7 @@ export default function App() {
   const [link, setLink] = useState('');
   const [location, setLocation] = useState();
   const [retry, setRetry] = useState(false);
+  const [thumbnail, setThumbnail] = useState('');
 
   const [firstText, setFirstText] = useState('Đang định vị...');
   const [assets] = useAssets([require('./assets/background.png')]);
@@ -191,7 +192,7 @@ export default function App() {
 
   const startGacha = async (listRestaurant, chosenOne) => {
     const startTime = new Date();
-    const duration = 7; // How long you want the gacha to run
+    const duration = 5; // How long you want the gacha to run
     let i = 0;
     while (true) {
       setFirstText(listRestaurant[i].name.trim());
@@ -208,6 +209,7 @@ export default function App() {
     }
     setFirstText(chosenOne.name.trim());
     setLink(chosenOne.url);
+    setThumbnail(chosenOne.photos[3].value);
     setRetry(true);
     setFetching(false);
   };
@@ -238,6 +240,18 @@ export default function App() {
             position: 'absolute',
           }}
         />
+        <View style={{ justifyContent: 'center', alignItems: 'center', top: 120 }}>
+          <Text
+            style={{
+              fontFamily: 'Comfortaa_700Bold',
+              fontSize: 36,
+              color: '#583d72',
+              textAlign: 'center',
+            }}
+          >
+            Bây giờ ăn gì?
+          </Text>
+        </View>
         <View style={styles.settings}>
           <TouchableOpacity onPress={() => setFlip(!flip)}>
             <Feather name="settings" size={24} color="white" />
@@ -264,6 +278,31 @@ export default function App() {
                 padding: 10,
               }}
             >
+              {thumbnail !== '' ? (
+                <View
+                  style={{
+                    width: 100,
+                    height: 100,
+                    backgroundColor: '#f2f2f2',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    alignSelf: 'center',
+                    position: 'absolute',
+                    margin: 10,
+                    borderRadius: 25,
+                    shadowColor: 'black',
+                    shadowOffset: {
+                      width: 0,
+                      height: 0,
+                    },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 5,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Image source={{ uri: thumbnail }} resizeMode="contain" style={{ width: '100%' }} />
+                </View>
+              ) : null}
               <View
                 style={{
                   flex: 1,
@@ -315,7 +354,7 @@ export default function App() {
                       minDelay={30}
                       initialDelay={2000}
                     >
-                      {`Location: ${text}`}
+                      {`Địa điểm: ${text}`}
                     </TypeWriter>
                   )}
                 </View>
