@@ -126,7 +126,7 @@ export default function App() {
         setCity(region);
         setFetching(true);
         let location = await Location.getCurrentPositionAsync({});
-        setFirstText('Gacha?');
+        setFirstText('Ăn gì cũng được :)');
         setLocation(location.coords);
         setFetching(false);
         Location.reverseGeocodeAsync(location.coords).then((data) => {
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   blurView: {
-    height: 500,
+    height: 400,
     width: 300,
     borderRadius: 30,
     overflow: 'hidden',
