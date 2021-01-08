@@ -86,6 +86,9 @@ const cityIds = {
   'Tỉnh Quảng Ninh': 265,
   'Tỉnh Thái Nguyên': 271,
   'Hà Nội': 218,
+  'Thành phố Hồ Chí Minh': 217,
+  'Đà Nẵng': 219,
+  'Hải Phòng': 220,
 };
 
 function sleep(ms) {
@@ -180,7 +183,7 @@ export default function App() {
     }
     const payload = {
       category_group: 1,
-      city_id: cityIds[city],
+      city_id: cityIds[city] ? cityIds[city] : 218,
       delivery_only: true,
       keyword: '',
       sort_type: 3,
