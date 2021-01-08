@@ -19,7 +19,7 @@ import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import { BlurView } from 'expo-blur';
 import AppLoading from 'expo-app-loading';
-import { useFonts, Comfortaa_600SemiBold, Comfortaa_700Bold } from '@expo-google-fonts/comfortaa';
+import { useFonts, Comfortaa_600SemiBold, Comfortaa_700Bold, Comfortaa_500Medium } from '@expo-google-fonts/comfortaa';
 import TypeWriter from 'react-native-typewriter';
 import FlipCard from 'react-native-flip-card';
 import axios from 'axios';
@@ -85,6 +85,7 @@ const cityIds = {
   'Tỉnh Quảng Nam': 263,
   'Tỉnh Quảng Ninh': 265,
   'Tỉnh Thái Nguyên': 271,
+  'Hà Nội': 218,
 };
 
 function sleep(ms) {
@@ -95,6 +96,7 @@ export default function App() {
   let [fontsLoaded] = useFonts({
     Comfortaa_600SemiBold,
     Comfortaa_700Bold,
+    Comfortaa_500Medium,
   });
 
   const [errorMsg, setErrorMsg] = useState(null);
@@ -341,7 +343,7 @@ export default function App() {
                 <TouchableOpacity onPress={() => getARandomRestaurant()} disabled={fetching}>
                   <Text
                     style={{
-                      fontFamily: 'Comfortaa_600SemiBold',
+                      fontFamily: 'Comfortaa_700Bold',
                       fontSize: 24,
                       color: '#583d72',
                       textAlign: 'center',
@@ -375,7 +377,7 @@ export default function App() {
                   {text && (
                     <TypeWriter
                       style={{
-                        fontFamily: 'Comfortaa_600SemiBold',
+                        fontFamily: 'Comfortaa_500Medium',
                         fontSize: 18,
                         color: '#583d72',
                       }}
@@ -398,7 +400,7 @@ export default function App() {
                     color: '#c2c2c2',
                   }}
                 >
-                  v1.0.0
+                  v1.1.0
                 </Text>
                 <View style={styles.shadowButtonLarge}>
                   <Text
