@@ -113,6 +113,7 @@ export default function App() {
   const [thumbnailVisibile, setThumbnailVisible] = useState(false);
   const [food, setToggleFood] = useState(false);
   const [drink, setToggleDrink] = useState(false);
+  const [firstTime, setFirstTime] = useState(true);
 
   const [firstText, setFirstText] = useState('Đang định vị...');
   const [assets] = useAssets([require('./assets/background.png')]);
@@ -219,6 +220,7 @@ export default function App() {
     const startTime = new Date();
     const duration = 5; // How long you want the gacha to run
     let i = 0;
+    setFirstTime(false);
     while (true) {
       setFirstText(listRestaurant[i].name.trim());
       i++;
@@ -343,7 +345,32 @@ export default function App() {
                   top: 20,
                 }}
               >
-                <TouchableOpacity onPress={() => getARandomRestaurant()} disabled={fetching}>
+                {firstTime ? (
+                  <TouchableOpacity
+                    style={{ ...styles.shadowButtonLarge, shadowOpacity: 0.15 }}
+                    onPress={() => {
+                      getARandomRestaurant();
+                    }}
+                    disabled={fetching}
+                  >
+                    <LinearGradient
+                      style={styles.shadowButtonLarge}
+                      colors={['#fd746c', '#ff9068']}
+                      start={{ x: 0, y: 0.5 }}
+                      end={{ x: 1, y: 0.5 }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: 'Comfortaa_600SemiBold',
+                          fontSize: 18,
+                          color: 'white',
+                        }}
+                      >
+                        {`Ăn gì cũng được :)`}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                ) : (
                   <Text
                     style={{
                       fontFamily: 'Comfortaa_700Bold',
@@ -355,7 +382,7 @@ export default function App() {
                   >
                     {firstText}
                   </Text>
-                </TouchableOpacity>
+                )}
                 <ActivityIndicator animating={fetching} style={{ marginTop: 10 }} />
                 {link || retry ? (
                   <View style={{ flexDirection: 'row', top: 10 }}>
