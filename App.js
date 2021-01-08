@@ -28,12 +28,19 @@ import { Feather } from '@expo/vector-icons';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
-const bannerAdId = 'ca-app-pub-1608026392919290/7161404605';
-const interstialAdId = 'ca-app-pub-3940256099942544/1033173712';
+import * as Animatable from 'react-native-animatable';
+
+const bannerAdIdProduction = 'ca-app-pub-1608026392919290/7161404605';
+const bannerAdIdTest = 'ca-app-pub-3940256099942544/6300978111'; // Test
+const interstialAdIdProduction = 'ca-app-pub-1608026392919290/7930209722';
+const interstialAdIdTest = 'ca-app-pub-3940256099942544/1033173712'; // Test
+
+const bannerAdId = Constants.isDevice && !__DEV__ ? bannerAdIdProduction : bannerAdIdTest;
+const interstialAdId = Constants.isDevice && !__DEV__ ? interstialAdIdProduction : interstialAdIdTest;
 
 const showAds = false;
 
-const storeUrl = StoreReview.storeUrl();
+const storeUrl = Platform.OS === 'ios' ? 'https://apps.apple.com/app/id1547760601' : undefined;
 
 const initAd = async () => {
   await AdMobInterstitial.setAdUnitID(interstialAdId);
@@ -95,7 +102,8 @@ export default function App() {
   const [link, setLink] = useState('');
   const [location, setLocation] = useState();
   const [retry, setRetry] = useState(false);
-  const [thumbnail, setThumbnail] = useState('');
+  const [thumbnail, setThumbnail] = useState(null);
+  const [thumbnailVisibile, setThumbnailVisible] = useState(false);
 
   const [firstText, setFirstText] = useState('Đang định vị...');
   const [assets] = useAssets([require('./assets/background.png')]);
@@ -185,6 +193,7 @@ export default function App() {
         setFirstText('Không còn quán nào mở :(');
       } else {
         const chosenOne = results[Math.round(Math.random() * (results.length - 1))];
+        setThumbnail(chosenOne.photos[5].value);
         startGacha(results, chosenOne);
       }
     }
@@ -209,7 +218,7 @@ export default function App() {
     }
     setFirstText(chosenOne.name.trim());
     setLink(chosenOne.url);
-    setThumbnail(chosenOne.photos[3].value);
+    setThumbnailVisible(true);
     setRetry(true);
     setFetching(false);
   };
@@ -257,7 +266,7 @@ export default function App() {
             <Feather name="settings" size={24} color="white" />
           </TouchableOpacity>
         </View>
-        <View style={styles.card}>
+        <Animatable.View style={styles.card} animation="fadeInUp" easing="ease-out">
           <FlipCard
             flip={flip}
             flipHorizontal={true}
@@ -278,12 +287,12 @@ export default function App() {
                 padding: 10,
               }}
             >
-              {thumbnail !== '' ? (
+              {thumbnail && thumbnailVisibile ? (
                 <View
                   style={{
                     width: 100,
                     height: 100,
-                    backgroundColor: '#f2f2f2',
+                    backgroundColor: 'transparent',
                     justifyContent: 'center',
                     alignItems: 'center',
                     alignSelf: 'center',
@@ -295,12 +304,16 @@ export default function App() {
                       width: 0,
                       height: 0,
                     },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 5,
-                    overflow: 'hidden',
+                    shadowOpacity: 0.2,
+                    shadowRadius: 10,
                   }}
                 >
-                  <Image source={{ uri: thumbnail }} resizeMode="contain" style={{ width: '100%' }} />
+                  <Animatable.View
+                    style={{ overflow: 'hidden', width: '100%', height: '100%', borderRadius: 25 }}
+                    animation="flipInY"
+                  >
+                    <Image source={{ uri: thumbnail }} resizeMode="contain" style={{ width: 100, height: 100 }} />
+                  </Animatable.View>
                 </View>
               ) : null}
               <View
@@ -335,6 +348,8 @@ export default function App() {
                         getARandomRestaurant();
                         setRetry(false);
                         setLink(null);
+                        setThumbnail(null);
+                        setThumbnailVisible(false);
                       }}
                       style={styles.shadowButton}
                     >
@@ -407,7 +422,7 @@ export default function App() {
               </View>
             </BlurView>
           </FlipCard>
-        </View>
+        </Animatable.View>
         <AdMobBanner
           bannerSize="banner"
           adUnitID={bannerAdId} // Test ID, Replace with your-admob-unit-id
@@ -443,7 +458,7 @@ const styles = StyleSheet.create({
       width: 0,
       height: 10,
     },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 20,
   },
   settings: { position: 'absolute', top: 40, right: 20 },
