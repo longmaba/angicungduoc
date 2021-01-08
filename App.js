@@ -30,6 +30,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import * as Animatable from 'react-native-animatable';
 
+import Toggle from 'react-native-toggle-element';
+
 const bannerAdIdProduction = 'ca-app-pub-1608026392919290/7161404605';
 const bannerAdIdTest = 'ca-app-pub-3940256099942544/6300978111'; // Test
 const interstialAdIdProduction = 'ca-app-pub-1608026392919290/7930209722';
@@ -104,6 +106,8 @@ export default function App() {
   const [retry, setRetry] = useState(false);
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbnailVisibile, setThumbnailVisible] = useState(false);
+  const [food, setToggleFood] = useState(false);
+  const [drink, setToggleDrink] = useState(false);
 
   const [firstText, setFirstText] = useState('Đang định vị...');
   const [assets] = useAssets([require('./assets/background.png')]);
@@ -165,6 +169,13 @@ export default function App() {
 
   const getListRestaurants = async () => {
     setFetching(true);
+    const combinedCategory = [];
+    if (food) {
+      combinedCategory.push({ code: 1, id: 1000000 });
+    }
+    if (drink) {
+      combinedCategory.push({ code: 1, id: 1000001 });
+    }
     const payload = {
       category_group: 1,
       city_id: cityIds[city],
@@ -177,7 +188,7 @@ export default function App() {
       },
       foody_services: [1],
       full_restaurant_ids: true,
-      combine_categories: [{ code: 1, id: 1000000 }],
+      combine_categories: combinedCategory.length !== 0 ? combinedCategory : [{ code: 1, id: 1000000 }],
     };
 
     const result = await axios.post('https://gappapi.deliverynow.vn/api/delivery/search_global', payload, { headers });
@@ -290,29 +301,30 @@ export default function App() {
               {thumbnail && thumbnailVisibile ? (
                 <View
                   style={{
-                    width: 100,
-                    height: 100,
+                    width: 130,
+                    height: 130,
                     backgroundColor: 'transparent',
                     justifyContent: 'center',
                     alignItems: 'center',
                     alignSelf: 'center',
                     position: 'absolute',
                     margin: 10,
-                    borderRadius: 25,
+                    top: 5,
+                    borderRadius: 30,
                     shadowColor: 'black',
                     shadowOffset: {
                       width: 0,
                       height: 0,
                     },
                     shadowOpacity: 0.2,
-                    shadowRadius: 10,
+                    shadowRadius: 8,
                   }}
                 >
                   <Animatable.View
-                    style={{ overflow: 'hidden', width: '100%', height: '100%', borderRadius: 25 }}
+                    style={{ overflow: 'hidden', width: '100%', height: '100%', borderRadius: 30 }}
                     animation="flipInY"
                   >
-                    <Image source={{ uri: thumbnail }} resizeMode="contain" style={{ width: 100, height: 100 }} />
+                    <Image source={{ uri: thumbnail }} resizeMode="contain" style={{ width: 130, height: 130 }} />
                   </Animatable.View>
                 </View>
               ) : null}
@@ -323,6 +335,7 @@ export default function App() {
                   justifyContent: 'center',
                   minWidth: '100%',
                   alignItems: 'center',
+                  top: 20,
                 }}
               >
                 <TouchableOpacity onPress={() => getARandomRestaurant()} disabled={fetching}>
@@ -332,6 +345,7 @@ export default function App() {
                       fontSize: 24,
                       color: '#583d72',
                       textAlign: 'center',
+                      top: 10,
                     }}
                   >
                     {firstText}
@@ -339,7 +353,7 @@ export default function App() {
                 </TouchableOpacity>
                 <ActivityIndicator animating={fetching} style={{ marginTop: 10 }} />
                 {link || retry ? (
-                  <View style={{ flexDirection: 'row' }}>
+                  <View style={{ flexDirection: 'row', top: 10 }}>
                     <TouchableOpacity onPress={() => Linking.openURL(link)} style={styles.shadowButton}>
                       <Feather name="external-link" size={24} color="white" />
                     </TouchableOpacity>
@@ -419,6 +433,78 @@ export default function App() {
                     </LinearGradient>
                   </TouchableOpacity>
                 </View>
+                <View
+                  style={{
+                    width: 200,
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    margin: 5,
+                    padding: 5,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: 'Comfortaa_600SemiBold',
+                      fontSize: 18,
+                      color: '#583d72',
+                    }}
+                  >
+                    Đồ ăng
+                  </Text>
+                  <Toggle
+                    value={food}
+                    onPress={(val) => setToggleFood(val)}
+                    trackBar={{
+                      width: 50,
+                      height: 20,
+                      activeBackgroundColor: '#ff9068',
+                      inActiveBackgroundColor: '#c2c2c2',
+                    }}
+                    thumbButton={{
+                      height: 30,
+                      width: 30,
+                      activeBackgroundColor: '#fd746c',
+                      inActiveBackgroundColor: '#d2d2d2',
+                    }}
+                  />
+                </View>
+                <View
+                  style={{
+                    width: 200,
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    margin: 5,
+                    padding: 5,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: 'Comfortaa_600SemiBold',
+                      fontSize: 18,
+                      color: '#583d72',
+                    }}
+                  >
+                    Đồ ún
+                  </Text>
+                  <Toggle
+                    value={drink}
+                    onPress={(val) => setToggleDrink(val)}
+                    trackBar={{
+                      width: 50,
+                      height: 20,
+                      activeBackgroundColor: '#ff9068',
+                      inActiveBackgroundColor: '#c2c2c2',
+                    }}
+                    thumbButton={{
+                      height: 30,
+                      width: 30,
+                      activeBackgroundColor: '#fd746c',
+                      inActiveBackgroundColor: '#d2d2d2',
+                    }}
+                  />
+                </View>
               </View>
             </BlurView>
           </FlipCard>
@@ -447,7 +533,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   blurView: {
-    height: 400,
+    height: 500,
     width: 300,
     borderRadius: 30,
     overflow: 'hidden',
