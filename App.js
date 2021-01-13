@@ -130,6 +130,7 @@ export default function App() {
   const [drink, setToggleDrink] = useState(false);
   const [firstTime, setFirstTime] = useState(true);
   const [rating, setRating] = useState(0);
+  const [review, setReview] = useState(0);
 
   const [firstText, setFirstText] = useState('Đang định vị...');
   const [assets] = useAssets([require('./assets/background.png')]);
@@ -227,7 +228,9 @@ export default function App() {
       } else {
         const chosenOne = results[Math.round(Math.random() * (results.length - 1))];
         let stars = Math.round(chosenOne.rating.avg);
+        console.log(chosenOne);
         setRating([...Array(stars).keys()]);
+        setReview(chosenOne.rating.display_total_review);
         setThumbnail(chosenOne.photos[5].value);
         startGacha(results, chosenOne);
       }
@@ -377,6 +380,16 @@ export default function App() {
                         return <AntDesign key={i} name="star" size={22} color="#ffd56b" />;
                       })}
                     </Animatable.View>
+                    <Animatable.View
+                      animation="fadeIn"
+                      delay={1000}
+                      easing="easeOutQuint"
+                      style={{ position: 'absolute', bottom: -17, alignSelf: 'center' }}
+                    >
+                      <Text style={{ fontFamily: 'Comfortaa_600SemiBold', fontSize: 12, color: '#a2a2a2' }}>
+                        {`Review: ${review}`}
+                      </Text>
+                    </Animatable.View>
                   </Animatable.View>
                 </View>
               ) : null}
@@ -387,7 +400,7 @@ export default function App() {
                   justifyContent: 'center',
                   minWidth: '100%',
                   alignItems: 'center',
-                  top: 20,
+                  top: 30,
                 }}
               >
                 {firstTime ? (
