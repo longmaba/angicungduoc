@@ -24,7 +24,7 @@ import TypeWriter from 'react-native-typewriter';
 import FlipCard from 'react-native-flip-card';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Feather, AntDesign, FontAwesome5 } from '@expo/vector-icons';
+import { Feather, AntDesign } from '@expo/vector-icons';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
