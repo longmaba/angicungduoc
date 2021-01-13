@@ -24,7 +24,7 @@ import TypeWriter from 'react-native-typewriter';
 import FlipCard from 'react-native-flip-card';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Feather } from '@expo/vector-icons';
+import { Feather, AntDesign, FontAwesome5 } from '@expo/vector-icons';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -95,6 +95,21 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const zoomOutEntrance = {
+  0: {
+    opacity: 0,
+    scale: 2,
+  },
+  0.5: {
+    opacity: 1,
+    scale: 1,
+  },
+  1: {
+    opacity: 1,
+    scale: 1,
+  },
+};
+
 export default function App() {
   let [fontsLoaded] = useFonts({
     Comfortaa_600SemiBold,
@@ -114,6 +129,7 @@ export default function App() {
   const [food, setToggleFood] = useState(false);
   const [drink, setToggleDrink] = useState(false);
   const [firstTime, setFirstTime] = useState(true);
+  const [rating, setRating] = useState(0);
 
   const [firstText, setFirstText] = useState('Đang định vị...');
   const [assets] = useAssets([require('./assets/background.png')]);
@@ -210,6 +226,8 @@ export default function App() {
         setFirstText('Không còn quán nào mở :(');
       } else {
         const chosenOne = results[Math.round(Math.random() * (results.length - 1))];
+        let stars = Math.round(chosenOne.rating.avg);
+        setRating([...Array(stars).keys()]);
         setThumbnail(chosenOne.photos[5].value);
         startGacha(results, chosenOne);
       }
@@ -327,11 +345,38 @@ export default function App() {
                     shadowRadius: 8,
                   }}
                 >
-                  <Animatable.View
-                    style={{ overflow: 'hidden', width: '100%', height: '100%', borderRadius: 30 }}
-                    animation="flipInY"
-                  >
-                    <Image source={{ uri: thumbnail }} resizeMode="contain" style={{ width: 130, height: 130 }} />
+                  <Animatable.View style={{ width: '100%', height: '100%', borderRadius: 30 }} animation="flipInY">
+                    <Image
+                      source={{ uri: thumbnail }}
+                      resizeMode="contain"
+                      style={{ width: '100%', height: '100%', borderRadius: 30 }}
+                    />
+                    <View style={{ position: 'absolute', top: -10, left: '8%', flexDirection: 'row' }}>
+                      {[...Array(5).keys()].map((d, i) => {
+                        return (
+                          <AntDesign
+                            key={i}
+                            name="staro"
+                            size={22}
+                            color="#ffd56b"
+                            style={{
+                              textShadowColor: '#fd746c',
+                              textShadowRadius: 5,
+                            }}
+                          />
+                        );
+                      })}
+                    </View>
+                    <Animatable.View
+                      animation={zoomOutEntrance}
+                      delay={1000}
+                      easing="easeOutQuint"
+                      style={{ position: 'absolute', top: -10, left: '8%', flexDirection: 'row' }}
+                    >
+                      {rating.map((d, i) => {
+                        return <AntDesign key={i} name="star" size={22} color="#ffd56b" />;
+                      })}
+                    </Animatable.View>
                   </Animatable.View>
                 </View>
               ) : null}
