@@ -228,7 +228,7 @@ export default function App() {
       } else {
         const chosenOne = results[Math.round(Math.random() * (results.length - 1))];
         let stars = Math.round(chosenOne.rating.avg);
-        console.log(chosenOne);
+        // console.log(chosenOne);
         setRating([...Array(stars).keys()]);
         setReview(chosenOne.rating.display_total_review);
         setThumbnail(chosenOne.photos[5].value);
@@ -265,7 +265,7 @@ export default function App() {
   const getRestaurantInfoFromIds = async (ids) => {
     const payload = { restaurant_ids: ids };
     let result = await axios.post('https://gappapi.deliverynow.vn/api/delivery/get_infos', payload, { headers });
-    result = result.data.reply.delivery_infos.filter((d) => d.is_open);
+    result = result.data.reply.delivery_infos.filter((d) => d.is_open && d.rating.total_review > 0);
     return result;
   };
 
